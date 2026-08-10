@@ -2,7 +2,7 @@ extends Node3D
 
 func _ready() -> void:
 	_setup_environment()
-	# Small delay so GLB finishes loading before collision gen
+	_setup_hud()
 	await get_tree().process_frame
 	await get_tree().process_frame
 	_generate_collision()
@@ -31,6 +31,16 @@ func _setup_environment() -> void:
 	var world_env := WorldEnvironment.new()
 	world_env.environment = env
 	add_child(world_env)
+
+func _setup_hud() -> void:
+	var cv  := CanvasLayer.new()
+	var lbl := Label.new()
+	lbl.text = "WASD — move   |   Mouse — look   |   Shift — sprint   |   Space — jump   |   F — spectator / soul mode   |   Esc — free cursor"
+	lbl.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 0.65))
+	lbl.add_theme_font_size_override("font_size", 13)
+	lbl.position = Vector2(12, 8)
+	cv.add_child(lbl)
+	add_child(cv)
 
 func _generate_collision() -> void:
 	var city := get_node_or_null("GlazovCity")

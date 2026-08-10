@@ -32,7 +32,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_TAB:
+		if event.keycode == KEY_F:
 			_toggle_spectator()
 
 func _toggle_spectator() -> void:
