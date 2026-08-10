@@ -1,0 +1,9 @@
+63f7b34db8d8cdea90c76aacccf841ec
+::res://::1786363599
+::res://assets/::1786363430
+glazov_city.glb::PackedScene::2433650627442804894::1786363430::1786363608::1::::<><><>0<>0<>89607154a498a13f060aa112afbbd0ba<>res://.godot/imported/glazov_city.glb-e66547184f0e532dba0f9a823f101cc6.scn::
+::res://scenes/::1786363566
+main.tscn::PackedScene::-1::1786363566::0::1::::<><><>0<>0<><>::res://assets/glazov_city.glb<>res://scripts/player.gd<>res://scripts/world_setup.gd
+::res://scripts/::1786363554
+player.gd::GDScript::4391874227227507190::1786363443::0::1::::<>CharacterBody3D<><>0<>0<><>::
+world_setup.gd::GDScript::8280211014986901910::1786363554::0::1::::<>Node3D<><>0<>0<><>::
