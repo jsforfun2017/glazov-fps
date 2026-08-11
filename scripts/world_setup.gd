@@ -14,9 +14,9 @@ const CITY_COLORS := {
 	# Windows / glass
 	"win":   Color(0.18, 0.32, 0.55), "blue":  Color(0.12, 0.20, 0.68),
 	# Roads / ground
-	"road":  Color(0.32, 0.32, 0.34), "road2": Color(0.30, 0.30, 0.32),
-	"swlk":  Color(0.58, 0.56, 0.52), "pavement2": Color(0.55, 0.53, 0.50),
-	"stripe": Color(0.85, 0.78, 0.12), "dirt":  Color(0.35, 0.25, 0.15),
+	"road":  Color(0.22, 0.22, 0.24), "road2": Color(0.20, 0.20, 0.22),
+	"swlk":  Color(0.38, 0.37, 0.35), "pavement2": Color(0.36, 0.35, 0.33),
+	"stripe": Color(0.85, 0.78, 0.12), "dirt":  Color(0.28, 0.20, 0.12),
 	# Nature
 	"green": Color(0.20, 0.48, 0.12), "pine_gr2": Color(0.12, 0.32, 0.08),
 	"pine_bark2": Color(0.20, 0.13, 0.07),
