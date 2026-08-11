@@ -3,11 +3,6 @@ extends Node3D
 var _sun: DirectionalLight3D
 var _world_env: WorldEnvironment
 var _sky_mat: ProceduralSkyMaterial
-var _is_day := true
-var _rain_particles: GPUParticles3D
-var _snow_particles: GPUParticles3D
-var _lightning_timer: Timer
-var _weather := "clear"
 
 const CITY_COLORS := {
 	# Apartments / buildings
@@ -60,7 +55,6 @@ const CITY_COLORS := {
 func _ready() -> void:
 	_setup_environment()
 	_setup_ground_plane()
-	_setup_weather_system()
 	_setup_hud()
 	await get_tree().process_frame
 	await get_tree().process_frame
@@ -70,15 +64,15 @@ func _ready() -> void:
 func _setup_environment() -> void:
 	_sun = get_parent().get_node_or_null("Sun") as DirectionalLight3D
 	if _sun:
-		_sun.light_energy = 1.0
-		_sun.light_color  = Color(1.0, 0.96, 0.88)
+		_sun.light_energy = 0.18
+		_sun.light_color  = Color(0.72, 0.80, 1.0)
 
 	_sky_mat = ProceduralSkyMaterial.new()
-	_sky_mat.sky_top_color     = Color(0.38, 0.52, 0.72)
-	_sky_mat.sky_horizon_color = Color(0.68, 0.76, 0.86)
-	_sky_mat.sky_curve         = 0.15
-	_sky_mat.ground_bottom_color  = Color(0.20, 0.20, 0.22)
-	_sky_mat.ground_horizon_color = Color(0.28, 0.28, 0.30)
+	_sky_mat.sky_top_color        = Color(0.01, 0.01, 0.06)
+	_sky_mat.sky_horizon_color    = Color(0.04, 0.05, 0.12)
+	_sky_mat.sky_curve            = 0.15
+	_sky_mat.ground_bottom_color  = Color(0.02, 0.02, 0.04)
+	_sky_mat.ground_horizon_color = Color(0.03, 0.03, 0.08)
 
 	var sky := Sky.new()
 	sky.sky_material = _sky_mat
@@ -87,27 +81,25 @@ func _setup_environment() -> void:
 	env.background_mode        = Environment.BG_SKY
 	env.sky                    = sky
 	env.ambient_light_source   = Environment.AMBIENT_SOURCE_SKY
-	env.ambient_light_energy   = 0.15
+	env.ambient_light_energy   = 0.08
 	env.tonemap_mode           = Environment.TONE_MAPPER_FILMIC
 	env.tonemap_exposure       = 0.9
 	env.fog_enabled            = true
-	env.fog_density            = 0.002
-	env.fog_light_color        = Color(0.70, 0.75, 0.85)
+	env.fog_density            = 0.004
+	env.fog_light_color        = Color(0.10, 0.12, 0.22)
 	env.fog_aerial_perspective = 0.5
-	# Glow
 	env.glow_enabled           = true
 	env.glow_normalized        = false
-	env.glow_intensity         = 0.5
-	env.glow_strength          = 1.2
-	env.glow_bloom             = 0.08
+	env.glow_intensity         = 0.8
+	env.glow_strength          = 1.4
+	env.glow_bloom             = 0.12
 	env.glow_blend_mode        = Environment.GLOW_BLEND_MODE_SOFTLIGHT
-	env.glow_hdr_threshold     = 0.7
+	env.glow_hdr_threshold     = 0.5
 	env.glow_hdr_scale         = 2.0
-	# Color grading — Soviet desaturated, high contrast look
 	env.adjustment_enabled     = true
-	env.adjustment_brightness  = 1.02
-	env.adjustment_contrast    = 1.15
-	env.adjustment_saturation  = 0.72
+	env.adjustment_brightness  = 0.95
+	env.adjustment_contrast    = 1.20
+	env.adjustment_saturation  = 0.60
 
 	_world_env = WorldEnvironment.new()
 	_world_env.environment = env
@@ -117,7 +109,7 @@ func _setup_ground_plane() -> void:
 	var plane_mesh := PlaneMesh.new()
 	plane_mesh.size = Vector2(2000, 2000)
 	var plane_mat := StandardMaterial3D.new()
-	plane_mat.albedo_color = Color(0.18, 0.18, 0.20)
+	plane_mat.albedo_color = Color(0.06, 0.06, 0.07)
 	plane_mat.roughness = 1.0
 	plane_mat.metallic = 0.0
 	plane_mesh.material = plane_mat
@@ -127,206 +119,26 @@ func _setup_ground_plane() -> void:
 	add_child(plane_inst)
 
 func _setup_hud() -> void:
-	var cv  := CanvasLayer.new()
+	var cv := CanvasLayer.new()
 
-	# Controls hint (top-left)
 	var lbl := Label.new()
 	lbl.text = "WASD — move   |   Mouse — look   |   Shift — sprint   |   Space — jump   |   F — spectator / soul mode   |   Esc — free cursor"
-	lbl.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 0.65))
+	lbl.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 0.50))
 	lbl.add_theme_font_size_override("font_size", 13)
 	lbl.position = Vector2(12, 8)
 	cv.add_child(lbl)
 
-	# Day/Night button (top-right)
-	var btn := Button.new()
-	btn.text = "🌙  Night"
-	btn.add_theme_font_size_override("font_size", 14)
-	btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	btn.position = Vector2(-130, 6)
-	btn.size = Vector2(118, 32)
-	btn.pressed.connect(_on_day_night_pressed.bind(btn))
-	cv.add_child(btn)
-
-	# Weather buttons (below Night button)
-	var weather_data := [["☀️  Clear", "clear"], ["🌨️  Snow", "snow"], ["⛈️  Rain", "rain"]]
-	for i in weather_data.size():
-		var wb := Button.new()
-		wb.text = weather_data[i][0]
-		wb.add_theme_font_size_override("font_size", 13)
-		wb.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-		wb.position = Vector2(-130, 44 + i * 32)
-		wb.size = Vector2(118, 26)
-		wb.pressed.connect(_set_weather.bind(weather_data[i][1]))
-		cv.add_child(wb)
-
-	# Vignette overlay
 	var vig := ColorRect.new()
 	vig.set_anchors_preset(Control.PRESET_FULL_RECT)
 	vig.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var vig_mat := ShaderMaterial.new()
 	var vig_shader := Shader.new()
-	vig_shader.code = "shader_type canvas_item;\nvoid fragment() {\nvec2 uv = UV - 0.5;\nfloat v = 1.0 - dot(uv * 1.8, uv * 1.8);\nv = pow(clamp(v, 0.0, 1.0), 1.3);\nCOLOR = vec4(0.0, 0.0, 0.0, 0.60 * (1.0 - v));\n}"
+	vig_shader.code = "shader_type canvas_item;\nvoid fragment() {\nvec2 uv = UV - 0.5;\nfloat v = 1.0 - dot(uv * 1.8, uv * 1.8);\nv = pow(clamp(v, 0.0, 1.0), 1.3);\nCOLOR = vec4(0.0, 0.0, 0.0, 0.70 * (1.0 - v));\n}"
 	vig_mat.shader = vig_shader
 	vig.material = vig_mat
 	cv.add_child(vig)
 
 	add_child(cv)
-
-func _on_day_night_pressed(btn: Button) -> void:
-	_is_day = not _is_day
-	_sun = get_parent().get_node_or_null("Sun") as DirectionalLight3D
-
-	if _is_day:
-		btn.text = "🌙  Night"
-		if _sun:
-			_sun.light_energy = 1.0
-			_sun.light_color  = Color(1.0, 0.96, 0.88)
-		_sky_mat.sky_top_color     = Color(0.38, 0.52, 0.72)
-		_sky_mat.sky_horizon_color = Color(0.68, 0.76, 0.86)
-		_sky_mat.ground_bottom_color  = Color(0.20, 0.20, 0.22)
-		_sky_mat.ground_horizon_color = Color(0.28, 0.28, 0.30)
-		_world_env.environment.fog_light_color = Color(0.70, 0.75, 0.85)
-		_world_env.environment.ambient_light_energy = 0.15
-	else:
-		btn.text = "☀️  Day"
-		if _sun:
-			_sun.light_energy = 0.18
-			_sun.light_color  = Color(0.72, 0.80, 1.0)
-		_sky_mat.sky_top_color     = Color(0.01, 0.01, 0.06)
-		_sky_mat.sky_horizon_color = Color(0.04, 0.05, 0.12)
-		_sky_mat.ground_bottom_color  = Color(0.02, 0.02, 0.04)
-		_sky_mat.ground_horizon_color = Color(0.03, 0.03, 0.08)
-		_world_env.environment.fog_light_color = Color(0.10, 0.12, 0.22)
-		_world_env.environment.ambient_light_energy = 0.08
-
-func _setup_weather_system() -> void:
-	# Rain particles — tight 30×30m box, dense, follows player via _process
-	_rain_particles = GPUParticles3D.new()
-	_rain_particles.amount = 2000
-	_rain_particles.lifetime = 1.2
-	_rain_particles.emitting = false
-	_rain_particles.local_coords = false
-	var rmat := ParticleProcessMaterial.new()
-	rmat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-	rmat.emission_box_extents = Vector3(25, 0.5, 25)
-	rmat.direction = Vector3(0.05, -1.0, 0.0)
-	rmat.spread = 2.0
-	rmat.gravity = Vector3(0, -28, 0)
-	rmat.initial_velocity_min = 8.0
-	rmat.initial_velocity_max = 12.0
-	rmat.color = Color(0.60, 0.70, 0.90, 0.65)
-	_rain_particles.process_material = rmat
-	var rdraw := QuadMesh.new()
-	rdraw.size = Vector2(0.025, 0.45)
-	var rsurf := StandardMaterial3D.new()
-	rsurf.albedo_color = Color(0.60, 0.70, 0.90, 0.65)
-	rsurf.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	rsurf.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	rsurf.cull_mode = BaseMaterial3D.CULL_DISABLED
-	rdraw.material = rsurf
-	_rain_particles.draw_pass_1 = rdraw
-	add_child(_rain_particles)
-
-	# Snow particles — 20×20m box, drifting, follows player via _process
-	_snow_particles = GPUParticles3D.new()
-	_snow_particles.amount = 1200
-	_snow_particles.lifetime = 5.0
-	_snow_particles.emitting = false
-	_snow_particles.local_coords = false
-	var smat := ParticleProcessMaterial.new()
-	smat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-	smat.emission_box_extents = Vector3(20, 0.5, 20)
-	smat.direction = Vector3(0, -1, 0)
-	smat.spread = 20.0
-	smat.gravity = Vector3(0, -1.5, 0)
-	smat.initial_velocity_min = 1.5
-	smat.initial_velocity_max = 3.0
-	smat.turbulence_enabled = true
-	smat.turbulence_noise_strength = 2.0
-	smat.turbulence_noise_scale = 1.5
-	smat.color = Color(1.0, 1.0, 1.0, 0.95)
-	_snow_particles.process_material = smat
-	var sdraw := QuadMesh.new()
-	sdraw.size = Vector2(0.12, 0.12)
-	var ssurf := StandardMaterial3D.new()
-	ssurf.albedo_color = Color(1.0, 1.0, 1.0, 0.95)
-	ssurf.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	ssurf.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	ssurf.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
-	sdraw.material = ssurf
-	_snow_particles.draw_pass_1 = sdraw
-	add_child(_snow_particles)
-
-	# Lightning timer
-	_lightning_timer = Timer.new()
-	_lightning_timer.one_shot = true
-	_lightning_timer.timeout.connect(_on_lightning)
-	add_child(_lightning_timer)
-
-func _process(_delta: float) -> void:
-	var player := get_parent().get_node_or_null("Player") as Node3D
-	if not player:
-		return
-	var pp: Vector3 = player.global_position
-	if _rain_particles.emitting:
-		_rain_particles.global_position = Vector3(pp.x, pp.y + 22, pp.z)
-	if _snow_particles.emitting:
-		_snow_particles.global_position = Vector3(pp.x, pp.y + 16, pp.z)
-
-func _set_weather(mode: String) -> void:
-	_weather = mode
-	_rain_particles.emitting = false
-	_snow_particles.emitting = false
-	_lightning_timer.stop()
-	var env := _world_env.environment
-	match mode:
-		"clear":
-			if _sun:
-				_sun.light_energy = 1.0
-				_sun.light_color  = Color(1.0, 0.96, 0.88)
-			_sky_mat.sky_top_color     = Color(0.38, 0.52, 0.72)
-			_sky_mat.sky_horizon_color = Color(0.68, 0.76, 0.86)
-			env.fog_density            = 0.002
-			env.fog_light_color        = Color(0.70, 0.75, 0.85)
-			env.adjustment_saturation  = 0.72
-		"snow":
-			if _sun:
-				_sun.light_energy = 0.35
-				_sun.light_color  = Color(0.90, 0.92, 0.98)
-			_sky_mat.sky_top_color     = Color(0.50, 0.54, 0.62)
-			_sky_mat.sky_horizon_color = Color(0.72, 0.74, 0.78)
-			env.fog_density            = 0.012
-			env.fog_light_color        = Color(0.82, 0.84, 0.88)
-			env.adjustment_saturation  = 0.40
-			_snow_particles.emitting   = true
-		"rain":
-			if _sun:
-				_sun.light_energy = 0.15
-				_sun.light_color  = Color(0.72, 0.80, 1.0)
-			_sky_mat.sky_top_color     = Color(0.08, 0.10, 0.16)
-			_sky_mat.sky_horizon_color = Color(0.14, 0.18, 0.26)
-			env.fog_density            = 0.018
-			env.fog_light_color        = Color(0.25, 0.30, 0.40)
-			env.adjustment_saturation  = 0.55
-			_rain_particles.emitting   = true
-			_lightning_timer.wait_time = randf_range(3.0, 8.0)
-			_lightning_timer.start()
-
-func _on_lightning() -> void:
-	if _weather != "rain" or not _sun:
-		return
-	var orig_energy := _sun.light_energy
-	_sun.light_color  = Color(0.88, 0.92, 1.0)
-	_sun.light_energy = 6.0
-	await get_tree().create_timer(0.07).timeout
-	_sun.light_energy = 0.3
-	await get_tree().create_timer(0.04).timeout
-	_sun.light_energy = 5.0
-	await get_tree().create_timer(0.06).timeout
-	_sun.light_energy = orig_energy
-	_sun.light_color  = Color(0.72, 0.80, 1.0)
-	_lightning_timer.wait_time = randf_range(4.0, 12.0)
-	_lightning_timer.start()
 
 func _apply_city_colors() -> void:
 	var city := get_node_or_null("GlazovCity")
