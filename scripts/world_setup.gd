@@ -9,14 +9,14 @@ const CITY_COLORS := {
 	# Apartments / buildings
 	"soviet": Color(0.82, 0.76, 0.60), "apart2": Color(0.62, 0.75, 0.58),
 	"cream": Color(0.88, 0.80, 0.52), "white": Color(0.96, 0.94, 0.90),
-	"gray":  Color(0.55, 0.55, 0.58), "conc":  Color(0.50, 0.48, 0.46),
+	"gray":  Color(0.38, 0.38, 0.40), "conc":  Color(0.35, 0.33, 0.31),
 	"roof":  Color(0.20, 0.18, 0.16),
 	# Windows / glass
 	"win":   Color(0.18, 0.32, 0.55), "blue":  Color(0.12, 0.20, 0.68),
 	# Roads / ground
-	"road":  Color(0.22, 0.22, 0.24), "road2": Color(0.20, 0.20, 0.22),
-	"swlk":  Color(0.38, 0.37, 0.35), "pavement2": Color(0.36, 0.35, 0.33),
-	"stripe": Color(0.85, 0.78, 0.12), "dirt":  Color(0.28, 0.20, 0.12),
+	"road":  Color(0.12, 0.12, 0.13), "road2": Color(0.11, 0.11, 0.12),
+	"swlk":  Color(0.28, 0.27, 0.26), "pavement2": Color(0.26, 0.25, 0.24),
+	"stripe": Color(0.85, 0.78, 0.12), "dirt":  Color(0.20, 0.14, 0.08),
 	# Nature
 	"green": Color(0.20, 0.48, 0.12), "pine_gr2": Color(0.12, 0.32, 0.08),
 	"pine_bark2": Color(0.20, 0.13, 0.07),
