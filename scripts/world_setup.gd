@@ -135,13 +135,15 @@ func _on_day_night_pressed(btn: Button) -> void:
 		_world_env.environment.ambient_light_energy = 0.08
 
 func _apply_city_colors() -> void:
-	var city := get_node_or_null("GlazoCity")
+	var city := get_node_or_null("GlazovCity")
 	if not city:
+		push_warning("GlazovCity not found for color pass")
 		return
-	_recolor_mesh(city)
-	print("City colors applied")
+	var hits := _recolor_mesh(city)
+	print("City colors applied: %d surfaces recolored" % hits)
 
-func _recolor_mesh(node: Node) -> void:
+func _recolor_mesh(node: Node) -> int:
+	var hits := 0
 	if node is MeshInstance3D and node.mesh != null:
 		var mesh := node.mesh as Mesh
 		for i in range(mesh.get_surface_count()):
@@ -149,13 +151,17 @@ func _recolor_mesh(node: Node) -> void:
 			if mat == null:
 				continue
 			var mat_name := mat.resource_name
+			if i < 3:
+				print("  surface %d material name: '%s'" % [i, mat_name])
 			if CITY_COLORS.has(mat_name):
 				var sm := StandardMaterial3D.new()
 				sm.albedo_color = CITY_COLORS[mat_name]
 				sm.roughness = 0.85
 				node.set_surface_override_material(i, sm)
+				hits += 1
 	for child in node.get_children():
-		_recolor_mesh(child)
+		hits += _recolor_mesh(child)
+	return hits
 
 func _generate_collision() -> void:
 	var city := get_node_or_null("GlazovCity")
