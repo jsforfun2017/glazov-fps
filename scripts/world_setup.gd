@@ -113,10 +113,12 @@ func _setup_ground_plane() -> void:
 	plane_mesh.size = Vector2(2000, 2000)
 	var plane_mat := StandardMaterial3D.new()
 	plane_mat.albedo_color = Color(0.18, 0.18, 0.20)
-	plane_mat.roughness = 0.95
+	plane_mat.roughness = 1.0
+	plane_mat.metallic = 0.0
 	plane_mesh.material = plane_mat
 	var plane_inst := MeshInstance3D.new()
 	plane_inst.mesh = plane_mesh
+	plane_inst.position = Vector3(0, -0.02, 0)
 	add_child(plane_inst)
 
 func _setup_hud() -> void:
