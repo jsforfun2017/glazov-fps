@@ -13,6 +13,11 @@ func _ready() -> void:
 	_generate_collision()
 
 func _setup_environment() -> void:
+	_sun = get_parent().get_node_or_null("Sun") as DirectionalLight3D
+	if _sun:
+		_sun.light_energy = 1.0
+		_sun.light_color  = Color(1.0, 0.96, 0.88)
+
 	_sky_mat = ProceduralSkyMaterial.new()
 	_sky_mat.sky_top_color     = Color(0.38, 0.52, 0.72)
 	_sky_mat.sky_horizon_color = Color(0.68, 0.76, 0.86)
@@ -27,7 +32,9 @@ func _setup_environment() -> void:
 	env.background_mode        = Environment.BG_SKY
 	env.sky                    = sky
 	env.ambient_light_source   = Environment.AMBIENT_SOURCE_SKY
-	env.ambient_light_energy   = 0.5
+	env.ambient_light_energy   = 0.15
+	env.tonemap_mode           = Environment.TONE_MAPPER_FILMIC
+	env.tonemap_exposure       = 0.9
 	env.fog_enabled            = true
 	env.fog_density            = 0.002
 	env.fog_light_color        = Color(0.70, 0.75, 0.85)
@@ -67,14 +74,14 @@ func _on_day_night_pressed(btn: Button) -> void:
 	if _is_day:
 		btn.text = "🌙  Night"
 		if _sun:
-			_sun.light_energy = 2.0
+			_sun.light_energy = 1.0
 			_sun.light_color  = Color(1.0, 0.96, 0.88)
 		_sky_mat.sky_top_color     = Color(0.38, 0.52, 0.72)
 		_sky_mat.sky_horizon_color = Color(0.68, 0.76, 0.86)
 		_sky_mat.ground_bottom_color  = Color(0.82, 0.86, 0.90)
 		_sky_mat.ground_horizon_color = Color(0.72, 0.78, 0.86)
 		_world_env.environment.fog_light_color = Color(0.70, 0.75, 0.85)
-		_world_env.environment.ambient_light_energy = 0.5
+		_world_env.environment.ambient_light_energy = 0.15
 	else:
 		btn.text = "☀️  Day"
 		if _sun:
