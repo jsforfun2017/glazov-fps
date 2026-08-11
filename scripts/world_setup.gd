@@ -264,10 +264,10 @@ func _setup_weather_system() -> void:
 	add_child(_lightning_timer)
 
 func _process(_delta: float) -> void:
-	var player := get_parent().get_node_or_null("Player")
+	var player := get_parent().get_node_or_null("Player") as Node3D
 	if not player:
 		return
-	var pp := player.global_position
+	var pp: Vector3 = player.global_position
 	if _rain_particles.emitting:
 		_rain_particles.global_position = Vector3(pp.x, pp.y + 22, pp.z)
 	if _snow_particles.emitting:
