@@ -5,11 +5,51 @@ var _world_env: WorldEnvironment
 var _sky_mat: ProceduralSkyMaterial
 var _is_day := true
 
+const CITY_COLORS := {
+	"soviet": Color(0.82, 0.76, 0.60), "apart2": Color(0.78, 0.82, 0.65),
+	"roof": Color(0.20, 0.18, 0.16), "win": Color(0.18, 0.32, 0.55),
+	"apart2_win": Color(0.18, 0.32, 0.55),
+	"road": Color(0.14, 0.14, 0.15), "road2": Color(0.14, 0.14, 0.15),
+	"sidewalk": Color(0.58, 0.56, 0.52), "pavement2": Color(0.55, 0.53, 0.50),
+	"grass": Color(0.20, 0.45, 0.12), "green_strip": Color(0.18, 0.42, 0.10),
+	"pine_gr": Color(0.12, 0.32, 0.08), "pine_gr2": Color(0.12, 0.32, 0.08),
+	"pine_bark": Color(0.20, 0.13, 0.07), "pine_bark2": Color(0.20, 0.13, 0.07),
+	"forest_pine": Color(0.10, 0.28, 0.06),
+	"lamp": Color(0.62, 0.60, 0.50), "lamp2": Color(0.62, 0.60, 0.50),
+	"bench": Color(0.30, 0.20, 0.10), "bench2": Color(0.30, 0.20, 0.10),
+	"fence": Color(0.22, 0.20, 0.18), "kiosk": Color(0.72, 0.50, 0.22),
+	"car_gray": Color(0.38, 0.38, 0.40), "car_gray2": Color(0.38, 0.38, 0.40),
+	"car_blue": Color(0.12, 0.22, 0.65), "car_blue2": Color(0.12, 0.22, 0.65),
+	"car_red": Color(0.68, 0.08, 0.06), "car_white": Color(0.88, 0.88, 0.88),
+	"hosp_wall": Color(0.95, 0.95, 0.92), "hosp_cross": Color(0.88, 0.04, 0.04),
+	"school_wall": Color(0.88, 0.80, 0.52), "admin_wall": Color(0.55, 0.55, 0.58),
+	"church_wall": Color(0.96, 0.94, 0.90), "church_dome": Color(0.12, 0.20, 0.68),
+	"church_gold": Color(0.88, 0.68, 0.05),
+	"factory_wall": Color(0.42, 0.38, 0.34), "chimney": Color(0.28, 0.24, 0.20),
+	"military_wall": Color(0.32, 0.40, 0.24), "mil_barracks": Color(0.30, 0.38, 0.22),
+	"water_tower": Color(0.50, 0.46, 0.38), "gate_metal": Color(0.22, 0.22, 0.24),
+	"market_wall": Color(0.82, 0.72, 0.52), "market_roof": Color(0.42, 0.22, 0.12),
+	"stall_top": Color(0.78, 0.40, 0.10), "shed_col": Color(0.48, 0.44, 0.38),
+	"plaza_tile": Color(0.68, 0.66, 0.62), "obelisk": Color(0.48, 0.48, 0.52),
+	"monument_b": Color(0.42, 0.40, 0.38), "cult_wall": Color(0.72, 0.65, 0.52),
+	"cult_col": Color(0.85, 0.82, 0.75), "cult_roof": Color(0.22, 0.18, 0.15),
+	"flagpole": Color(0.55, 0.55, 0.58), "flag_r": Color(0.82, 0.04, 0.04),
+	"star_r": Color(0.88, 0.05, 0.05),
+	"canal_bed": Color(0.28, 0.38, 0.30), "water2": Color(0.12, 0.32, 0.58),
+	"bridge_c": Color(0.48, 0.44, 0.38), "tram_roof": Color(0.72, 0.12, 0.08),
+	"tram_wall": Color(0.92, 0.92, 0.95),
+	"grave_dirt": Color(0.08, 0.06, 0.05), "grave_stone": Color(0.20, 0.20, 0.22),
+	"grave_iron": Color(0.07, 0.07, 0.08), "grave_chapel": Color(0.28, 0.26, 0.24),
+	"grave_roof2": Color(0.06, 0.05, 0.05), "dead_bark": Color(0.10, 0.08, 0.06),
+	"grave_path": Color(0.18, 0.16, 0.14), "crypt_stone": Color(0.24, 0.22, 0.20),
+}
+
 func _ready() -> void:
 	_setup_environment()
 	_setup_hud()
 	await get_tree().process_frame
 	await get_tree().process_frame
+	_apply_city_colors()
 	_generate_collision()
 
 func _setup_environment() -> void:
@@ -93,6 +133,29 @@ func _on_day_night_pressed(btn: Button) -> void:
 		_sky_mat.ground_horizon_color = Color(0.03, 0.03, 0.08)
 		_world_env.environment.fog_light_color = Color(0.10, 0.12, 0.22)
 		_world_env.environment.ambient_light_energy = 0.08
+
+func _apply_city_colors() -> void:
+	var city := get_node_or_null("GlazoCity")
+	if not city:
+		return
+	_recolor_mesh(city)
+	print("City colors applied")
+
+func _recolor_mesh(node: Node) -> void:
+	if node is MeshInstance3D and node.mesh != null:
+		var mesh := node.mesh as Mesh
+		for i in range(mesh.get_surface_count()):
+			var mat := mesh.surface_get_material(i)
+			if mat == null:
+				continue
+			var mat_name := mat.resource_name
+			if CITY_COLORS.has(mat_name):
+				var sm := StandardMaterial3D.new()
+				sm.albedo_color = CITY_COLORS[mat_name]
+				sm.roughness = 0.85
+				node.set_surface_override_material(i, sm)
+	for child in node.get_children():
+		_recolor_mesh(child)
 
 func _generate_collision() -> void:
 	var city := get_node_or_null("GlazovCity")
