@@ -55,6 +55,7 @@ const CITY_COLORS := {
 
 func _ready() -> void:
 	_setup_environment()
+	_setup_ground_plane()
 	_setup_hud()
 	await get_tree().process_frame
 	await get_tree().process_frame
@@ -71,8 +72,8 @@ func _setup_environment() -> void:
 	_sky_mat.sky_top_color     = Color(0.38, 0.52, 0.72)
 	_sky_mat.sky_horizon_color = Color(0.68, 0.76, 0.86)
 	_sky_mat.sky_curve         = 0.15
-	_sky_mat.ground_bottom_color  = Color(0.82, 0.86, 0.90)
-	_sky_mat.ground_horizon_color = Color(0.72, 0.78, 0.86)
+	_sky_mat.ground_bottom_color  = Color(0.20, 0.20, 0.22)
+	_sky_mat.ground_horizon_color = Color(0.28, 0.28, 0.30)
 
 	var sky := Sky.new()
 	sky.sky_material = _sky_mat
@@ -106,6 +107,17 @@ func _setup_environment() -> void:
 	_world_env = WorldEnvironment.new()
 	_world_env.environment = env
 	add_child(_world_env)
+
+func _setup_ground_plane() -> void:
+	var plane_mesh := PlaneMesh.new()
+	plane_mesh.size = Vector2(2000, 2000)
+	var plane_mat := StandardMaterial3D.new()
+	plane_mat.albedo_color = Color(0.18, 0.18, 0.20)
+	plane_mat.roughness = 0.95
+	plane_mesh.material = plane_mat
+	var plane_inst := MeshInstance3D.new()
+	plane_inst.mesh = plane_mesh
+	add_child(plane_inst)
 
 func _setup_hud() -> void:
 	var cv  := CanvasLayer.new()
@@ -152,8 +164,8 @@ func _on_day_night_pressed(btn: Button) -> void:
 			_sun.light_color  = Color(1.0, 0.96, 0.88)
 		_sky_mat.sky_top_color     = Color(0.38, 0.52, 0.72)
 		_sky_mat.sky_horizon_color = Color(0.68, 0.76, 0.86)
-		_sky_mat.ground_bottom_color  = Color(0.82, 0.86, 0.90)
-		_sky_mat.ground_horizon_color = Color(0.72, 0.78, 0.86)
+		_sky_mat.ground_bottom_color  = Color(0.20, 0.20, 0.22)
+		_sky_mat.ground_horizon_color = Color(0.28, 0.28, 0.30)
 		_world_env.environment.fog_light_color = Color(0.70, 0.75, 0.85)
 		_world_env.environment.ambient_light_energy = 0.15
 	else:
