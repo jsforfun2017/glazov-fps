@@ -200,62 +200,61 @@ func _on_day_night_pressed(btn: Button) -> void:
 		_world_env.environment.ambient_light_energy = 0.08
 
 func _setup_weather_system() -> void:
-	# Rain particles
+	# Rain particles — tight 30×30m box, dense, follows player via _process
 	_rain_particles = GPUParticles3D.new()
-	_rain_particles.amount = 800
-	_rain_particles.lifetime = 1.4
+	_rain_particles.amount = 2000
+	_rain_particles.lifetime = 1.2
 	_rain_particles.emitting = false
 	_rain_particles.local_coords = false
 	var rmat := ParticleProcessMaterial.new()
 	rmat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-	rmat.emission_box_extents = Vector3(120, 0.5, 120)
+	rmat.emission_box_extents = Vector3(25, 0.5, 25)
 	rmat.direction = Vector3(0.05, -1.0, 0.0)
-	rmat.spread = 3.0
-	rmat.gravity = Vector3(0, -25, 0)
-	rmat.initial_velocity_min = 5.0
-	rmat.initial_velocity_max = 8.0
-	rmat.color = Color(0.55, 0.65, 0.80, 0.55)
+	rmat.spread = 2.0
+	rmat.gravity = Vector3(0, -28, 0)
+	rmat.initial_velocity_min = 8.0
+	rmat.initial_velocity_max = 12.0
+	rmat.color = Color(0.60, 0.70, 0.90, 0.65)
 	_rain_particles.process_material = rmat
 	var rdraw := QuadMesh.new()
-	rdraw.size = Vector2(0.018, 0.25)
+	rdraw.size = Vector2(0.025, 0.45)
 	var rsurf := StandardMaterial3D.new()
-	rsurf.albedo_color = Color(0.55, 0.65, 0.80, 0.55)
+	rsurf.albedo_color = Color(0.60, 0.70, 0.90, 0.65)
 	rsurf.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	rsurf.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	rsurf.cull_mode = BaseMaterial3D.CULL_DISABLED
 	rdraw.material = rsurf
 	_rain_particles.draw_pass_1 = rdraw
-	_rain_particles.position = Vector3(0, 28, 0)
 	add_child(_rain_particles)
 
-	# Snow particles
+	# Snow particles — 20×20m box, drifting, follows player via _process
 	_snow_particles = GPUParticles3D.new()
-	_snow_particles.amount = 500
-	_snow_particles.lifetime = 6.0
+	_snow_particles.amount = 1200
+	_snow_particles.lifetime = 5.0
 	_snow_particles.emitting = false
 	_snow_particles.local_coords = false
 	var smat := ParticleProcessMaterial.new()
 	smat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-	smat.emission_box_extents = Vector3(100, 0.5, 100)
+	smat.emission_box_extents = Vector3(20, 0.5, 20)
 	smat.direction = Vector3(0, -1, 0)
-	smat.spread = 15.0
-	smat.gravity = Vector3(0, -1.2, 0)
-	smat.initial_velocity_min = 1.0
-	smat.initial_velocity_max = 2.5
+	smat.spread = 20.0
+	smat.gravity = Vector3(0, -1.5, 0)
+	smat.initial_velocity_min = 1.5
+	smat.initial_velocity_max = 3.0
 	smat.turbulence_enabled = true
-	smat.turbulence_noise_strength = 1.5
-	smat.turbulence_noise_scale = 2.0
-	smat.color = Color(1.0, 1.0, 1.0, 0.92)
+	smat.turbulence_noise_strength = 2.0
+	smat.turbulence_noise_scale = 1.5
+	smat.color = Color(1.0, 1.0, 1.0, 0.95)
 	_snow_particles.process_material = smat
-	var sdraw := SphereMesh.new()
-	sdraw.radius = 0.04
-	sdraw.height = 0.08
+	var sdraw := QuadMesh.new()
+	sdraw.size = Vector2(0.12, 0.12)
 	var ssurf := StandardMaterial3D.new()
 	ssurf.albedo_color = Color(1.0, 1.0, 1.0, 0.95)
+	ssurf.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	ssurf.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	ssurf.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
 	sdraw.material = ssurf
 	_snow_particles.draw_pass_1 = sdraw
-	_snow_particles.position = Vector3(0, 22, 0)
 	add_child(_snow_particles)
 
 	# Lightning timer
@@ -263,6 +262,16 @@ func _setup_weather_system() -> void:
 	_lightning_timer.one_shot = true
 	_lightning_timer.timeout.connect(_on_lightning)
 	add_child(_lightning_timer)
+
+func _process(_delta: float) -> void:
+	var player := get_parent().get_node_or_null("Player")
+	if not player:
+		return
+	var pp := player.global_position
+	if _rain_particles.emitting:
+		_rain_particles.global_position = Vector3(pp.x, pp.y + 22, pp.z)
+	if _snow_particles.emitting:
+		_snow_particles.global_position = Vector3(pp.x, pp.y + 16, pp.z)
 
 func _set_weather(mode: String) -> void:
 	_weather = mode
