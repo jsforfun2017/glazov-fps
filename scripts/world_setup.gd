@@ -79,6 +79,20 @@ func _setup_environment() -> void:
 	env.fog_density            = 0.002
 	env.fog_light_color        = Color(0.70, 0.75, 0.85)
 	env.fog_aerial_perspective = 0.5
+	# Glow
+	env.glow_enabled           = true
+	env.glow_normalized        = false
+	env.glow_intensity         = 0.5
+	env.glow_strength          = 1.2
+	env.glow_bloom             = 0.08
+	env.glow_blend_mode        = Environment.GLOW_BLEND_MODE_SOFTLIGHT
+	env.glow_hdr_threshold     = 0.7
+	env.glow_hdr_scale         = 2.0
+	# Color grading — Soviet desaturated, high contrast look
+	env.adjustment_enabled     = true
+	env.adjustment_brightness  = 1.02
+	env.adjustment_contrast    = 1.15
+	env.adjustment_saturation  = 0.72
 
 	_world_env = WorldEnvironment.new()
 	_world_env.environment = env
@@ -104,6 +118,17 @@ func _setup_hud() -> void:
 	btn.size = Vector2(118, 32)
 	btn.pressed.connect(_on_day_night_pressed.bind(btn))
 	cv.add_child(btn)
+
+	# Vignette overlay
+	var vig := ColorRect.new()
+	vig.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vig.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var vig_mat := ShaderMaterial.new()
+	var vig_shader := Shader.new()
+	vig_shader.code = "shader_type canvas_item;\nvoid fragment() {\nvec2 uv = UV - 0.5;\nfloat v = 1.0 - dot(uv * 1.8, uv * 1.8);\nv = pow(clamp(v, 0.0, 1.0), 1.3);\nCOLOR = vec4(0.0, 0.0, 0.0, 0.60 * (1.0 - v));\n}"
+	vig_mat.shader = vig_shader
+	vig.material = vig_mat
+	cv.add_child(vig)
 
 	add_child(cv)
 
